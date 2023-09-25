@@ -19,7 +19,7 @@ def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glMatrixMode(GL_MODELVIEW)
     
-    atualiza_cena()
+    atualiza_nave()
     
     glPushMatrix()
     glTranslatef(T, T2, 0)
@@ -30,7 +30,7 @@ def display():
 
     # Adicione a luz da esfera
     glPushMatrix()
-    glTranslatef(19.0, 9.0, -20.0)  # Posição da esfera (0, 0, 0)
+    glTranslatef(19.0, 9.0, 0)  # Posição da esfera (0, 0, 0)
     glColor3f(1.0, 1.0, 0.0)    # Cor amarela
     glutSolidSphere(5.0, 20, 20)  # Crie uma esfera sólida
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [1.0, 1.0, 0.0, 1.0])
@@ -48,8 +48,6 @@ def KeysUp(key, x, y):
         right = 0
     elif(key == GLUT_KEY_UP ): 
         up = 0
-        
-        velocidade = 0.8
     elif(key == GLUT_KEY_DOWN ): 
         down = 0
         velocidade = 0.8
@@ -72,7 +70,7 @@ def Keys(key, x, y):
         # Mover a nave para trás levando em conta a rotação atual
         down = 1
 
-def atualiza_cena():
+def atualiza_nave():
     global T
     global T2
     global angle
@@ -83,19 +81,25 @@ def atualiza_cena():
     if right == 1:
         angle -= 5.0
     if up == 1:
-        velocidade += 0.03
-        print(velocidade)
+        if ( velocidade < 3.5 ):
+            velocidade += 0.03
         T += ( 0.15 * np.cos(np.radians(angle)) ) * velocidade
         T2 += ( 0.15 * np.sin(np.radians(angle)) ) * velocidade
     if down == 1:
-        velocidade += 0.03
-        print(velocidade)
+        if ( velocidade < 3.5 ):
+            velocidade += 0.03
         T -= ( 0.15 * np.cos(np.radians(angle)) ) * velocidade
         T2 -= ( 0.15 * np.sin(np.radians(angle)) ) * velocidade
+    if up == 0 and down == 0:
+        # Desaceleração gradual ao soltar a tecla "cima"
+        if ( velocidade > 0.8 ):
+            velocidade -= 0.1
+            T += ( 0.15 * np.cos(np.radians(angle)) ) * velocidade
+            T2 += ( 0.15 * np.sin(np.radians(angle)) ) * velocidade
 
 def animacao(value):
     glutPostRedisplay()
-    glutTimerFunc(33, animacao, 1)
+    glutTimerFunc(30, animacao, 1)
     global T
 
 def idle():
@@ -109,7 +113,7 @@ def resize(w, h):
     gluPerspective(37.0, w/h, 1.0, 100.0)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
-    gluLookAt(0.0, 0.0, 40.0,   # posição da câmera
+    gluLookAt(0.0, 0.0, 60.0,   # posição da câmera
                 0.0, 0.0, 0.0,  # onde a câmera vai apontar
                 0.0, 1.0, 0.0)  # parte para cima
 
@@ -137,17 +141,17 @@ def init():
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_LIGHTING)
     glEnable(GL_LIGHT0)
-
-glutInit()
-glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB)
-glutInitWindowSize(1280, 720)
-glutInitWindowPosition(50, 50)
-wind = glutCreateWindow("Jogo")
-init()
-rocket = pywavefront.Wavefront("AirShip\AirShip.obj")
-glutDisplayFunc(display)
-glutReshapeFunc(resize)
-glutTimerFunc(30, animacao, 1)
-glutSpecialFunc(Keys)
-glutSpecialUpFunc(KeysUp)
-glutMainLoop()
+if __name__ == '__main__':
+    glutInit()
+    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB)
+    glutInitWindowSize(1280, 720)
+    glutInitWindowPosition(50, 50)
+    wind = glutCreateWindow("Jogo")
+    init()
+    rocket = pywavefront.Wavefront("AirShip\AirShip.obj")
+    glutDisplayFunc(display)
+    glutReshapeFunc(resize)
+    glutTimerFunc(30, animacao, 1)
+    glutSpecialFunc(Keys)
+    glutSpecialUpFunc(KeysUp)
+    glutMainLoop()
