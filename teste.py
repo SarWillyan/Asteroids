@@ -17,6 +17,9 @@ ASTEROIDES_ROTACAO = 0.0
 VELOCIDADE = 1.0
 ASTEROIDES = []
 TIROS = []
+PONTUACAO = 0
+VIDAS = 5
+GAMEOVER = False
 
 # classe para representar o tiro
 class Tiro:
@@ -37,14 +40,15 @@ def adicionar_tiro():
     TIROS.append(tiro)
 
 def atualiza_tiros():
-    global TIROS
+    global TIROS, PONTUACAO
     for tiro in TIROS:
         tiro.x += (0.15 * np.cos(np.radians(tiro.angulo))) * tiro.velocidade
         tiro.y += (0.15 * np.sin(np.radians(tiro.angulo))) * tiro.velocidade
         
         # Se o tiro colidir com um asteroide, remova o tiro e o asteroide da lista
         for asteroid in ASTEROIDES:
-            if np.sqrt((tiro.x - asteroid.x)**2 + (tiro.y - asteroid.y)**2) <  asteroid.size + 0.5:
+            if np.sqrt((tiro.x - asteroid.x)**2 + (tiro.y - asteroid.y)**2) <  (asteroid.size-(asteroid.size*0.1)):
+                PONTUACAO += 100
                 TIROS.remove(tiro)
                 ASTEROIDES.remove(asteroid)
         
@@ -105,7 +109,7 @@ def adicionar_asteroide():
 
 # Atualiza a posição de cada asteroide
 def atualiza_asteroides():
-    global ASTEROIDES
+    global ASTEROIDES, VIDAS, T, T2
     for asteroid in ASTEROIDES:
         # Se o asteroide estiver na parte superior da tela, mova-o para baixo
         if asteroid.surgimento == "cima":
@@ -125,12 +129,29 @@ def atualiza_asteroides():
             asteroid.y += asteroid.speed * np.sin(np.radians(asteroid.angulo))
         
         # Se o asteroide colidir com a nave, remova-o da lista
-        if np.sqrt((T - asteroid.x)**2 + (T2 - asteroid.y)**2) <  asteroid.size + 1.0:
+        if np.sqrt((T - asteroid.x)**2 + (T2 - asteroid.y)**2) <  ((asteroid.size-(asteroid.size*0.1)) + 1.0):
+            morte()
             ASTEROIDES.remove(asteroid)
-          
+            
+        
         # Se o asteroide sair da tela, remova-o da lista
         if asteroid.x < -30.0 or asteroid.x > 30.0 or asteroid.y < -30.0 or asteroid.y > 30.0:
             ASTEROIDES.remove(asteroid)
+
+def morte():
+    global PONTUACAO, T, T2, VELOCIDADE, VIDAS, GAMEOVER
+    
+    VIDAS -= 1
+    if PONTUACAO - 300 >= 0:
+        PONTUACAO -= 300
+    else:
+        PONTUACAO = 0
+    T = 0.0
+    T2 = 0.0
+    VELOCIDADE = 0.5
+    
+    if VIDAS == 0:
+        GAMEOVER = True 
 
 # Função de inicialização
 def init():
@@ -156,16 +177,43 @@ def init():
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_LIGHTING)
     glEnable(GL_LIGHT0)
+   
+# Escreve um texto na tela    
+def draw_text(x, y, text):
+    glRasterPos2f(x, y)
+    for character in text:
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(character))
+        
+def reseta_jogo():
+    global VIDAS, ASTEROIDES, TIROS, PONTUACAO, T, T2, VELOCIDADE
+    VIDAS = 5
+    ASTEROIDES = []
+    TIROS = []
+    PONTUACAO = 0
+    T = 0.0
+    T2 = 0.0
+    VELOCIDADE = 0.5
 
 # Função de exibição
 def display():
-    global ASTEROIDES_ROTACAO
+    global ASTEROIDES_ROTACAO, VIDAS, GAMEOVER, UP, LEFT, RIGHT
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Limpa o buffer de cor e o buffer de profundidade
     glMatrixMode(GL_MODELVIEW) # Matriz de modelagem
     
+    draw_text(-28.0, 18.0, "Pontuação: " + str(PONTUACAO)) # Escreve a pontuação na tela
+    draw_text(-28.0, 16.0, "Velocidade: " + str(round(VELOCIDADE, 2))) # Escreve a velocidade na tela
+    draw_text(-28.0, 14.0, "Vida: " + " <3" * VIDAS) # Escreve a vida na tela")
     atualiza_nave() 
     atualiza_asteroides()
     atualiza_tiros()
+    
+    if GAMEOVER:
+        # Se o jogo acabou, exiba a mensagem "game over"
+        UP = 0.0
+        LEFT = 0.0
+        RIGHT = 0.0
+        draw_text(-4.0, 0.0, "GAME OVER")
+        draw_text(-7.0, -2.0, "Pressione espaço para reiniciar") 
     
     glPushMatrix() # Empilha a matriz atual
     glTranslatef(T, T2, 0) 
@@ -230,17 +278,20 @@ def resize(w, h):
 
 # Função para lidar com teclas pressionadas
 def Keys(key, x, y):
-    global UP, LEFT, RIGHT, VELOCIDADE
+    global UP, LEFT, RIGHT, VELOCIDADE, GAMEOVER
 
-    if key == GLUT_KEY_LEFT:
-        # Rotacionar a nave para a esquerda no eixo Z
-        LEFT = 1
-    if key == GLUT_KEY_RIGHT:
-        # Rotacionar a nave para a direita no eixo Z
-        RIGHT = 1
-    if key == GLUT_KEY_UP:
-        # Mover a nave para frente levando em conta a rotação atual
-        UP = 1
+    if GAMEOVER:
+        pass
+    else:
+        if key == GLUT_KEY_LEFT:
+            # Rotacionar a nave para a esquerda no eixo Z
+            LEFT = 1
+        if key == GLUT_KEY_RIGHT:
+            # Rotacionar a nave para a direita no eixo Z
+            RIGHT = 1
+        if key == GLUT_KEY_UP:
+            # Mover a nave para frente levando em conta a rotação atual
+            UP = 1
 
 # Função para lidar com teclas liberadas
 def KeysUp(key, x, y):
@@ -302,8 +353,15 @@ def idle():
     
 # Função para lidar com teclas pressionadas
 def KeysBoards(key, x, y):
-    if key == b' ':
-        adicionar_tiro()
+    global GAMEOVER
+    if GAMEOVER:
+        reseta_jogo()
+        if key == b' ':
+            GAMEOVER = False    
+    else:
+        # Caso contrário, permita que o jogador dispare tiros
+        if key == b' ':
+            adicionar_tiro()
 
 if __name__ == '__main__':
     glutInit()
