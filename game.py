@@ -4,17 +4,100 @@ from OpenGL.GLUT import *
 import pywavefront
 from pywavefront import visualization
 import numpy as np
+import random
 
 # Variáveis globais
-left = 0.0
-right = 0.0
-up = 0.0
-down = 0.0
+LEFT = 0.0
+RIGHT = 0.0
+UP = 0.0
 T = 0
 T2 = 0
-T3 = 0
-angle = 0.0
-velocidade = 0.8
+ANGLE = 0.0
+VELOCIDADE = 1.0
+ASTEROIDES = []
+
+# classe para representar o tiro
+class Tiro:
+    def __init__(self, x, y, angulo):
+        self.x = x
+        self.y = y
+        self.angulo = angulo
+        self.size = 0.5
+
+# classe para representar um asteroide
+class Asteroid:
+    def __init__(self, x, y, size, speed, surgimento, angulo):
+        self.x = x
+        self.y = y
+        self.size = size
+        self.speed = speed
+        self.surgimento = surgimento
+        self.angulo = angulo
+
+# Função para adicionar um novo asteroide em uma posição aleatória na borda
+def adicionar_asteroide():
+    # Escolha aleatoriamente uma das quatro bordas (cima, baixo, esquerda, direita)
+    borda = random.choice(["cima", "direita", "esquerda", "baixo"])
+    
+    if borda == "cima":
+        angulo = random.uniform(180, 360)
+        surgimento = "cima"
+        x = random.uniform(-30.0, 30.0)  # Posição x aleatória
+        y = 30.0  # Na parte superior da tela
+    elif borda == "baixo":
+        angulo = random.uniform(0, 180)
+        surgimento = "baixo"
+        x = random.uniform(-30.0, 30.0)  # Posição x aleatória
+        y = -30.0  # Na parte inferior da tela
+    elif borda == "esquerda":
+        # Escolher aleatoriamente entre os dois intervalos: (270, 360) ou (0, 90)
+        intervalo = random.choice([(270, 360), (0, 90)])
+        # Gerar um ângulo aleatório dentro do intervalo selecionado
+        angulo = random.uniform(intervalo[0], intervalo[1])
+        surgimento = "esquerda"
+        x = -30.0  # Na parte esquerda da tela
+        y = random.uniform(-30.0, 30.0)  # Posição y aleatória
+    else:
+        angulo = random.uniform(90, 270)
+        surgimento = "direita"
+        x = 30.0  # Na parte direita da tela
+        y = random.uniform(-30.0, 30.0)  # Posição y aleatória
+    
+    size = random.uniform(1.0, 3.0)  # Tamanho aleatório
+    speed = random.uniform(0.1, 0.2)  # Velocidade aleatória
+    
+    # Crie um novo asteroide e adicione-o à lista
+    asteroid = Asteroid(x, y, size, speed, surgimento, angulo)
+    ASTEROIDES.append(asteroid)
+
+# Atualiza a posição de cada asteroide
+def atualiza_asteroides():
+    global ASTEROIDES
+    for asteroid in ASTEROIDES:
+        # Se o asteroide estiver na parte superior da tela, mova-o para baixo
+        if asteroid.surgimento == "cima":
+            asteroid.x -= asteroid.speed * np.cos(np.radians(asteroid.angulo))
+            asteroid.y -= asteroid.speed * np.sin(np.radians(asteroid.angulo))
+        # Se o asteroide estiver na parte inferior da tela, mova-o para cima
+        elif asteroid.surgimento == "baixo":
+            asteroid.x += asteroid.speed * np.cos(np.radians(asteroid.angulo))
+            asteroid.y += asteroid.speed * np.sin(np.radians(asteroid.angulo))
+        # Se o asteroide estiver na parte esquerda da tela, mova-o para a direita
+        elif asteroid.surgimento == "esquerda":
+            asteroid.x += asteroid.speed * np.cos(np.radians(asteroid.angulo))
+            asteroid.y += asteroid.speed * np.sin(np.radians(asteroid.angulo))
+        # Se o asteroide estiver na parte direita da tela, mova-o para a esquerda
+        if asteroid.surgimento == "direita":
+            asteroid.x += asteroid.speed * np.cos(np.radians(asteroid.angulo))
+            asteroid.y += asteroid.speed * np.sin(np.radians(asteroid.angulo))
+        
+        # Se o asteroide colidir com a nave, remova-o da lista
+        if np.sqrt((T - asteroid.x)**2 + (T2 - asteroid.y)**2) <  asteroid.size + 1.0:
+            ASTEROIDES.remove(asteroid)
+          
+        # Se o asteroide sair da tela, remova-o da lista
+        if asteroid.x < -30.0 or asteroid.x > 30.0 or asteroid.y < -30.0 or asteroid.y > 30.0:
+            ASTEROIDES.remove(asteroid)
 
 # Função de inicialização
 def init():
@@ -43,21 +126,34 @@ def init():
 
 # Função de exibição
 def display():
+    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Limpa o buffer de cor e o buffer de profundidade
     glMatrixMode(GL_MODELVIEW) # Matriz de modelagem
     
     atualiza_nave() 
+    atualiza_asteroides()
     
     glPushMatrix() # Empilha a matriz atual
     glTranslatef(T, T2, 0) 
-    glRotatef(angle, 0.0, 0.0, 1.0) 
+    glRotatef(ANGLE, 0.0, 0.0, 1.0) 
     glScalef(0.3, 0.3, 0.3) 
     visualization.draw(rocket) 
     glPopMatrix() # Desempilha a matriz atual
+    
+    # Desenhe os asteroides
+    for asteroid in ASTEROIDES:
+        glPushMatrix()
+        glTranslatef(asteroid.x, asteroid.y, 0.0)
+        glScalef(asteroid.size, asteroid.size, 1.0) 
+        glColor3f(1.0, 1.0, 1.0)  # Cor dos asteroides
+        glutSolidSphere(1.0, 20, 20)  # Use glutSolidSphere ou outro modelo de asteroide
+        glPopMatrix()
+    
+    # glPopMatrix()
 
     # Adicione a luz da esfera
     glPushMatrix() 
-    glTranslatef(19.0, 9.0, 0)  # Posição da esfera (0, 0, 0)
+    glTranslatef(19.0, 9.0, -20)  # Posição da esfera (0, 0, 0)
     glColor3f(1.0, 1.0, 0.0)    # Cor amarela
     glutSolidSphere(5.0, 20, 20)  # Crie uma esfera sólida
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [1.0, 1.0, 0.0, 1.0])
@@ -80,79 +176,70 @@ def resize(w, h):
 
 # Função para lidar com teclas pressionadas
 def Keys(key, x, y):
-    global up, down, left, right
+    global UP, LEFT, RIGHT, VELOCIDADE
 
     if key == GLUT_KEY_LEFT:
         # Rotacionar a nave para a esquerda no eixo Z
-        left = 1
+        LEFT = 1
     elif key == GLUT_KEY_RIGHT:
         # Rotacionar a nave para a direita no eixo Z
-        right = 1
+        RIGHT = 1
     elif key == GLUT_KEY_UP:
         # Mover a nave para frente levando em conta a rotação atual
-        up = 1
-    elif key == GLUT_KEY_DOWN:
-        # Mover a nave para trás levando em conta a rotação atual
-        down = 1
-        velocidade = 0.8
+        UP = 1
 
 # Função para lidar com teclas liberadas
 def KeysUp(key, x, y):
-    global up, down, left, right, velocidade
+    global UP, LEFT, RIGHT
 
     if key == GLUT_KEY_LEFT:
-        left = 0
+        LEFT = 0
     elif key == GLUT_KEY_RIGHT:
-        right = 0
+        RIGHT = 0
     elif key == GLUT_KEY_UP:
-        up = 0
-    elif key == GLUT_KEY_DOWN:
-        down = 0
+        UP = 0
 
 # Função de atualização da nave
 def atualiza_nave():
-    global angle, up, down, left, right
+    global ANGLE, UP, LEFT, RIGHT, VELOCIDADE
 
-    if left == 1:
-        angle += 5.0
-    if right == 1:
-        angle -= 5.0
-    if up == 1:
+    if LEFT == 1:
+        ANGLE += 5.0
+        if VELOCIDADE > 1.0:
+            VELOCIDADE -= 0.02
+    if RIGHT == 1:
+        ANGLE -= 5.0
+        if VELOCIDADE > 1.0:
+            VELOCIDADE -= 0.02
+    if UP == 1:
         avanca_nave()
-    if down == 1:
-        recua_nave()
-    if up == 0 and down == 0:
+    if UP == 0:
         desacelera_nave()
 
 # Função para mover a nave para frente
 def avanca_nave():
-    global T, T2, angle, velocidade
-    if velocidade < 3.5:
-        velocidade += 0.03
-    T += (0.15 * np.cos(np.radians(angle))) * velocidade
-    T2 += (0.15 * np.sin(np.radians(angle))) * velocidade
-
-# Função para mover a nave para trás
-def recua_nave():
-    global T, T2, angle, velocidade
-    if velocidade < 3.5:
-        velocidade += 0.03
-    T -= (0.15 * np.cos(np.radians(angle))) * velocidade
-    T2 -= (0.15 * np.sin(np.radians(angle))) * velocidade
+    global T, T2, ANGLE, VELOCIDADE
+    if VELOCIDADE < 4.0:
+        VELOCIDADE += 0.06
+    T += (0.15 * np.cos(np.radians(ANGLE))) * VELOCIDADE
+    T2 += (0.15 * np.sin(np.radians(ANGLE))) * VELOCIDADE
 
 # Função para desacelerar a nave
 def desacelera_nave():
-    global T, T2, angle, velocidade
-    if velocidade > 0.8:
-        velocidade -= 0.1
-        T += (0.15 * np.cos(np.radians(angle))) * velocidade
-        T2 += (0.15 * np.sin(np.radians(angle))) * velocidade
+    global T, T2, ANGLE, VELOCIDADE
+    if VELOCIDADE > 1.0:
+        VELOCIDADE -= 0.06
+        T += (0.15 * np.cos(np.radians(ANGLE))) * VELOCIDADE
+        T2 += (0.15 * np.sin(np.radians(ANGLE))) * VELOCIDADE
 
 # Função de animação
 def animacao(value):
     glutPostRedisplay()
     glutTimerFunc(30, animacao, 1)
-    global T
+    
+    # Gera asteroides aleatórios em intervalos regulares
+    if random.random() < 0.03: # 3% de chance
+        adicionar_asteroide()
 
 # Função idle
 def idle():

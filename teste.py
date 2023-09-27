@@ -13,8 +13,10 @@ UP = 0.0
 T = 0
 T2 = 0
 ANGLE = 0.0
+ASTEROIDES_ROTACAO = 0.0
 VELOCIDADE = 1.0
 ASTEROIDES = []
+TIROS = []
 
 # classe para representar o tiro
 class Tiro:
@@ -22,7 +24,33 @@ class Tiro:
         self.x = x
         self.y = y
         self.angulo = angulo
+        self.velocidade = 10.0
         self.size = 0.5
+
+# Função para adicionar um novo tiro
+def adicionar_tiro():
+    global ANGLE, TIROS
+    angulo = np.copy(ANGLE)
+    x = T
+    y = T2
+    tiro = Tiro(x, y, ANGLE)
+    TIROS.append(tiro)
+
+def atualiza_tiros():
+    global TIROS
+    for tiro in TIROS:
+        tiro.x += (0.15 * np.cos(np.radians(tiro.angulo))) * tiro.velocidade
+        tiro.y += (0.15 * np.sin(np.radians(tiro.angulo))) * tiro.velocidade
+        
+        # Se o tiro colidir com um asteroide, remova o tiro e o asteroide da lista
+        for asteroid in ASTEROIDES:
+            if np.sqrt((tiro.x - asteroid.x)**2 + (tiro.y - asteroid.y)**2) <  asteroid.size + 0.5:
+                TIROS.remove(tiro)
+                ASTEROIDES.remove(asteroid)
+        
+        # Se o tiro sair da tela, remova-o da lista
+        if tiro.x < -30.0 or tiro.x > 30.0 or tiro.y < -30.0 or tiro.y > 30.0:
+            TIROS.remove(tiro)
 
 # classe para representar um asteroide
 class Asteroid:
@@ -33,6 +61,7 @@ class Asteroid:
         self.speed = speed
         self.surgimento = surgimento
         self.angulo = angulo
+        self.rotacao = 0.0
 
 # Função para adicionar um novo asteroide em uma posição aleatória na borda
 def adicionar_asteroide():
@@ -64,7 +93,7 @@ def adicionar_asteroide():
         y = random.uniform(-30.0, 30.0)  # Posição y aleatória
     
     size = random.uniform(1.0, 3.0)  # Tamanho aleatório
-    speed = random.uniform(0.1, 0.2)  # Velocidade aleatória
+    speed = random.uniform(0.1, 0.3)  # Velocidade aleatória
     
     # Crie um novo asteroide e adicione-o à lista
     asteroid = Asteroid(x, y, size, speed, surgimento, angulo)
@@ -126,12 +155,13 @@ def init():
 
 # Função de exibição
 def display():
-    
+    global ASTEROIDES_ROTACAO
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Limpa o buffer de cor e o buffer de profundidade
     glMatrixMode(GL_MODELVIEW) # Matriz de modelagem
     
     atualiza_nave() 
     atualiza_asteroides()
+    atualiza_tiros()
     
     glPushMatrix() # Empilha a matriz atual
     glTranslatef(T, T2, 0) 
@@ -144,12 +174,21 @@ def display():
     for asteroid in ASTEROIDES:
         glPushMatrix()
         glTranslatef(asteroid.x, asteroid.y, 0.0)
-        glScalef(asteroid.size, asteroid.size, 1.0) 
-        glColor3f(1.0, 1.0, 1.0)  # Cor dos asteroides
-        glutSolidSphere(1.0, 20, 20)  # Use glutSolidSphere ou outro modelo de asteroide
+        asteroid.rotacao += asteroid.speed * 5.0
+        glRotatef(asteroid.rotacao, 1.0, 0.0, 0.0)
+        glScalef(asteroid.size, asteroid.size, asteroid.size) 
+        glColor3f(0.5, 0.2, 0.0)
+        glutSolidSphere(1.0, 5, 5)  # Use glutSolidSphere ou outro modelo de asteroide
         glPopMatrix()
     
-    # glPopMatrix()
+    # Desenhe os tiros
+    for tiro in TIROS:
+        glPushMatrix()
+        glTranslatef(tiro.x, tiro.y, 0.0)
+        glScalef(tiro.size, tiro.size, 1.0) 
+        glColor3f(1.0, 0.0, 0.0)  # Cor dos tiros
+        glutSolidSphere(0.5, 10, 10)
+        glPopMatrix()
 
     # Adicione a luz da esfera
     glPushMatrix() 
@@ -238,20 +277,25 @@ def animacao(value):
     glutTimerFunc(30, animacao, 1)
     
     # Gera asteroides aleatórios em intervalos regulares
-    if random.random() < 0.03: # 3% de chance
+    if random.random() < 0.04: # 3% de chance
         adicionar_asteroide()
 
 # Função idle
 def idle():
     global T
     T -= 1
+    
+# Função para lidar com teclas pressionadas
+def KeysBoards(key, x, y):
+    if key == b' ':
+        adicionar_tiro()
 
 if __name__ == '__main__':
     glutInit()
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB)
     glutInitWindowSize(1280, 720)
     glutInitWindowPosition(50, 50)
-    wind = glutCreateWindow("Jogo")
+    wind = glutCreateWindow("Meu Asteroids")
     init()
     rocket = pywavefront.Wavefront("AirShip\AirShip.obj")
     glutDisplayFunc(display)
@@ -259,4 +303,6 @@ if __name__ == '__main__':
     glutTimerFunc(30, animacao, 1)
     glutSpecialFunc(Keys)
     glutSpecialUpFunc(KeysUp)
+    glutKeyboardUpFunc(KeysBoards)
+    
     glutMainLoop()
