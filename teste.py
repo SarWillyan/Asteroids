@@ -24,8 +24,8 @@ class Tiro:
         self.x = x
         self.y = y
         self.angulo = angulo
-        self.velocidade = 10.0
-        self.size = 0.5
+        self.velocidade = 7.0
+        self.size = 0.8
 
 # Função para adicionar um novo tiro
 def adicionar_tiro():
@@ -54,7 +54,7 @@ def atualiza_tiros():
 
 # classe para representar um asteroide
 class Asteroid:
-    def __init__(self, x, y, size, speed, surgimento, angulo):
+    def __init__(self, x, y, size, speed, surgimento, angulo, nome):
         self.x = x
         self.y = y
         self.size = size
@@ -62,32 +62,36 @@ class Asteroid:
         self.surgimento = surgimento
         self.angulo = angulo
         self.rotacao = 0.0
+        self.nome = nome
 
 # Função para adicionar um novo asteroide em uma posição aleatória na borda
 def adicionar_asteroide():
     # Escolha aleatoriamente uma das quatro bordas (cima, baixo, esquerda, direita)
+    nomes = random.choice(["Asteroids/Asteroid_Small_1.obj", "Asteroids/Asteroid_Small_2.obj", 
+                           "Asteroids/Asteroid_Small_3.obj", "Asteroids/Asteroid_Small_4.obj", 
+                           "Asteroids/Asteroid_Small_5.obj", "Asteroids/Asteroid_Small_6.obj"])
     borda = random.choice(["cima", "direita", "esquerda", "baixo"])
     
     if borda == "cima":
-        angulo = random.uniform(180, 360)
+        angulo = random.uniform(225, 315)
         surgimento = "cima"
         x = random.uniform(-30.0, 30.0)  # Posição x aleatória
         y = 30.0  # Na parte superior da tela
     elif borda == "baixo":
-        angulo = random.uniform(0, 180)
+        angulo = random.uniform(45, 135)
         surgimento = "baixo"
         x = random.uniform(-30.0, 30.0)  # Posição x aleatória
         y = -30.0  # Na parte inferior da tela
     elif borda == "esquerda":
         # Escolher aleatoriamente entre os dois intervalos: (270, 360) ou (0, 90)
-        intervalo = random.choice([(270, 360), (0, 90)])
+        intervalo = random.choice([(315, 360), (0, 45)])
         # Gerar um ângulo aleatório dentro do intervalo selecionado
         angulo = random.uniform(intervalo[0], intervalo[1])
         surgimento = "esquerda"
         x = -30.0  # Na parte esquerda da tela
         y = random.uniform(-30.0, 30.0)  # Posição y aleatória
     else:
-        angulo = random.uniform(90, 270)
+        angulo = random.uniform(135, 225)
         surgimento = "direita"
         x = 30.0  # Na parte direita da tela
         y = random.uniform(-30.0, 30.0)  # Posição y aleatória
@@ -96,7 +100,7 @@ def adicionar_asteroide():
     speed = random.uniform(0.1, 0.3)  # Velocidade aleatória
     
     # Crie um novo asteroide e adicione-o à lista
-    asteroid = Asteroid(x, y, size, speed, surgimento, angulo)
+    asteroid = Asteroid(x, y, size, speed, surgimento, angulo, nomes)
     ASTEROIDES.append(asteroid)
 
 # Atualiza a posição de cada asteroide
@@ -177,27 +181,38 @@ def display():
         asteroid.rotacao += asteroid.speed * 5.0
         glRotatef(asteroid.rotacao, 1.0, 0.0, 0.0)
         glScalef(asteroid.size, asteroid.size, asteroid.size) 
-        glColor3f(0.5, 0.2, 0.0)
-        glutSolidSphere(1.0, 5, 5)  # Use glutSolidSphere ou outro modelo de asteroide
+        #desenha o asteroide de acordo com nome
+        if asteroid.nome == "Asteroids/Asteroid_Small_1.obj":
+            visualization.draw(asteroid1)
+        elif asteroid.nome == "Asteroids/Asteroid_Small_2.obj":
+            visualization.draw(asteroid2)
+        elif asteroid.nome == "Asteroids/Asteroid_Small_3.obj":
+            visualization.draw(asteroid3)
+        elif asteroid.nome == "Asteroids/Asteroid_Small_4.obj":
+            visualization.draw(asteroid4) 
+        elif asteroid.nome == "Asteroids/Asteroid_Small_5.obj":
+            visualization.draw(asteroid5)
+        elif asteroid.nome == "Asteroids/Asteroid_Small_6.obj":
+            visualization.draw(asteroid6)
         glPopMatrix()
     
     # Desenhe os tiros
     for tiro in TIROS:
         glPushMatrix()
         glTranslatef(tiro.x, tiro.y, 0.0)
-        glScalef(tiro.size, tiro.size, 1.0) 
-        glColor3f(1.0, 0.0, 0.0)  # Cor dos tiros
-        glutSolidSphere(0.5, 10, 10)
+        glScalef(tiro.size, tiro.size, tiro.size)
+        # glutSolidSphere(0.5, 20, 20)
+        visualization.draw(missel) 
         glPopMatrix()
 
-    # Adicione a luz da esfera
-    glPushMatrix() 
-    glTranslatef(19.0, 9.0, -20)  # Posição da esfera (0, 0, 0)
-    glColor3f(1.0, 1.0, 0.0)    # Cor amarela
-    glutSolidSphere(5.0, 20, 20)  # Crie uma esfera sólida
-    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [1.0, 1.0, 0.0, 1.0])
-    glPopMatrix()
-    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [0.0, 0.0, 0.0, 1.0])
+    # # Adicione a luz da esfera
+    # glPushMatrix() 
+    # glTranslatef(19.0, 9.0, -20)  # Posição da esfera (0, 0, 0)
+    # glColor3f(1.0, 1.0, 0.0)    # Cor amarela
+    # glutSolidSphere(5.0, 20, 20)  # Crie uma esfera sólida
+    # glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [1.0, 1.0, 0.0, 1.0])
+    # glPopMatrix()
+    # glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [0.0, 0.0, 0.0, 1.0])
 
     glutSwapBuffers()
 
@@ -220,10 +235,10 @@ def Keys(key, x, y):
     if key == GLUT_KEY_LEFT:
         # Rotacionar a nave para a esquerda no eixo Z
         LEFT = 1
-    elif key == GLUT_KEY_RIGHT:
+    if key == GLUT_KEY_RIGHT:
         # Rotacionar a nave para a direita no eixo Z
         RIGHT = 1
-    elif key == GLUT_KEY_UP:
+    if key == GLUT_KEY_UP:
         # Mover a nave para frente levando em conta a rotação atual
         UP = 1
 
@@ -233,9 +248,9 @@ def KeysUp(key, x, y):
 
     if key == GLUT_KEY_LEFT:
         LEFT = 0
-    elif key == GLUT_KEY_RIGHT:
+    if key == GLUT_KEY_RIGHT:
         RIGHT = 0
-    elif key == GLUT_KEY_UP:
+    if key == GLUT_KEY_UP:
         UP = 0
 
 # Função de atualização da nave
@@ -243,11 +258,11 @@ def atualiza_nave():
     global ANGLE, UP, LEFT, RIGHT, VELOCIDADE
 
     if LEFT == 1:
-        ANGLE += 5.0
+        ANGLE += 10.0
         if VELOCIDADE > 1.0:
             VELOCIDADE -= 0.02
     if RIGHT == 1:
-        ANGLE -= 5.0
+        ANGLE -= 10.0
         if VELOCIDADE > 1.0:
             VELOCIDADE -= 0.02
     if UP == 1:
@@ -297,7 +312,21 @@ if __name__ == '__main__':
     glutInitWindowPosition(50, 50)
     wind = glutCreateWindow("Meu Asteroids")
     init()
+    
+    # Referência para a nave
     rocket = pywavefront.Wavefront("AirShip\AirShip.obj")
+    
+    # referencia para os 6 asteroides
+    asteroid1 = pywavefront.Wavefront("Asteroids\Asteroid_Small_1.obj")
+    asteroid2 = pywavefront.Wavefront("Asteroids\Asteroid_Small_2.obj")
+    asteroid3 = pywavefront.Wavefront("Asteroids\Asteroid_Small_3.obj")
+    asteroid4 = pywavefront.Wavefront("Asteroids\Asteroid_Small_4.obj")
+    asteroid5 = pywavefront.Wavefront("Asteroids\Asteroid_Small_5.obj")
+    asteroid6 = pywavefront.Wavefront("Asteroids\Asteroid_Small_6.obj")
+    
+    # referencia para o tiro
+    missel = pywavefront.Wavefront("Tiro\missile.obj")
+    
     glutDisplayFunc(display)
     glutReshapeFunc(resize)
     glutTimerFunc(30, animacao, 1)
