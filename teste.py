@@ -51,6 +51,13 @@ def atualiza_tiros():
                 PONTUACAO += 100
                 TIROS.remove(tiro)
                 ASTEROIDES.remove(asteroid)
+                if (asteroid.size > 2.0):
+                    angulo = random.uniform(0, 360)
+                    asteroid1 = Asteroid(asteroid.x, asteroid.y, asteroid.size/2.0, asteroid.speed, asteroid.surgimento, angulo, asteroid.nome)
+                    angulo = random.uniform(0, 360)
+                    asteroid2 = Asteroid(asteroid.x, asteroid.y, asteroid.size/2.0, asteroid.speed, asteroid.surgimento, angulo, asteroid.nome)
+                    ASTEROIDES.append(asteroid1)
+                    ASTEROIDES.append(asteroid2)
         
         # Se o tiro sair da tela, remova-o da lista
         if tiro.x < -30.0 or tiro.x > 30.0 or tiro.y < -30.0 or tiro.y > 30.0:
