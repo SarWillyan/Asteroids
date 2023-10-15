@@ -20,6 +20,53 @@ TIROS = []
 PONTUACAO = 0
 VIDAS = 5
 GAMEOVER = False
+PART_VELOCIDADE = 0.1
+EXPLOSAO_TEMPO = 0.06
+
+explosoes = []
+
+# Classe que representa uma partícula
+class Particula:
+    def __init__(self, vx, vy, vz):
+        self.vx = vx
+        self.vy = vy
+        self.vz = vz
+
+# Classe que representa uma explosão de partículas      
+class Explosao:
+    px = py = pz = 0.0 #Posição
+    contador = 0 #Tempo
+    tdv = 1 #Tempo de vida
+    particulas = [] #Particulas
+        
+    def __init__(self, px, py, pz, n_part): 
+        self.px = px
+        self.py = py
+        self.pz = pz
+        self.particulas = []
+        for i in range(n_part):
+            vx = np.random.randn() * PART_VELOCIDADE
+            vy = np.random.randn() * PART_VELOCIDADE
+            vz = np.random.randn() * PART_VELOCIDADE
+            self.particulas.append(Particula(vx + 0.1, vy/2, vz/2)) 
+         
+    def desenha(self):
+        for particula in self.particulas:
+            part_px = self.px + particula.vx * (self.contador / 2)
+            part_py = self.py + particula.vy * (self.contador / 2)
+            part_pz = self.pz + particula.vz * (self.contador / 2)
+            glPushMatrix()
+            glTranslatef(part_px, part_py, part_pz)
+            glRotatef( self.contador*10, 0.0, 1.0, 0.0)
+            # glColor4f(0.9,  0.1, 0.1, self.tdv) #Vermelho
+            glScalef(0.5, 0.5, 0.5)
+            # glutSolidSphere(1.0, 10, 10)  # Use glutSolidSphere ou outro modelo de 
+            visualization.draw(explosao) # desenho para a partícula
+            glPopMatrix()
+            
+        self.tdv -= EXPLOSAO_TEMPO
+        self.contador += 1
+
 
 # classe para representar o tiro
 class Tiro:
@@ -51,6 +98,9 @@ def atualiza_tiros():
                 PONTUACAO += 100
                 TIROS.remove(tiro)
                 ASTEROIDES.remove(asteroid)
+                #######################
+                explosoes.append(Explosao(asteroid.x, asteroid.y, 1, 20))
+                #######################
                 if (asteroid.size > 2.0):
                     angulo = random.uniform(0, 360)
                     asteroid1 = Asteroid(asteroid.x, asteroid.y, asteroid.size/2.0, asteroid.speed, asteroid.surgimento, angulo, asteroid.nome)
@@ -260,10 +310,16 @@ def display():
         visualization.draw(missel) 
         glPopMatrix()
 
+    # Desenhe as explosões 
+    for i, expl in enumerate(explosoes):
+        expl.desenha()
+        if(expl.tdv < 0):
+            del explosoes[i]
+
     # # Adicione a luz da esfera
     # glPushMatrix() 
     # glTranslatef(19.0, 9.0, -20)  # Posição da esfera (0, 0, 0)
-    # glColor3f(1.0, 1.0, 0.0)    # Cor amarela
+    # glColor3f(1.0, 1.0, 1.0)    # Cor amarela
     # glutSolidSphere(5.0, 20, 20)  # Crie uma esfera sólida
     # glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [1.0, 1.0, 0.0, 1.0])
     # glPopMatrix()
@@ -391,6 +447,9 @@ if __name__ == '__main__':
     
     # referencia para o tiro
     missel = pywavefront.Wavefront("Tiro\missile.obj")
+    
+    # referencia para a explosão
+    explosao = pywavefront.Wavefront("explosao.obj")
     
     glutDisplayFunc(display)
     glutReshapeFunc(resize)
